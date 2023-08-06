@@ -1,0 +1,41 @@
+﻿@page "/playlists"
+@using SpotifyAPI.Web
+@inject SpotifyClient _spotify
+@inject NavigationManager _navigationManager
+
+<MudText Typo="Typo.h4">Playlists nach Genre suchen</MudText>
+<MudTextField @bind-Value="Genres" Label="Kommaseperierte Genres..." DebounceInterval="500" Immediate="true" Variant="Variant.Filled" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" AdornmentColor="Color.Primary" />
+
+
+@if (Ergebnis?.Playlists.Items != null)
+{
+    <div>
+        @foreach (var playlist in Ergebnis.Playlists.Items)
+        {
+            <img title="@playlist.Name" class="newRelease" src="@playlist.Images.FirstOrDefault()?.Url" alt="@playlist.Name" @onclick="() => ShowPlaylist(playlist)" />
+        }
+    </div>
+}
+
+@code {
+
+    public string Genres
+    {
+        get => _genres;
+        set
+        {
+            _genres = value;
+            Ergebnis = _spotify.Search.Item(new SearchRequest(SearchRequest.Types.Playlist, _genres)).Result;
+        } 
+    }
+
+    public SearchResponse Ergebnis { get; set; }
+
+
+    private string _genres;
+
+    private void ShowPlaylist(SimplePlaylist playlist)
+    {
+        _navigationManager.NavigateTo($"playlist/{playlist.Id}");
+    }
+}

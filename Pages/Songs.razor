@@ -1,0 +1,211 @@
+﻿@page "/"
+@page "/songs"
+@page "/songs/{SongId}"
+@using SpotifyAPI.Web
+@using Swan
+@inject SpotifyClient _spotify
+@inject NavigationManager _navigationManager
+@inject ISnackbar Snackbar
+
+<MudStack>
+    <MudTextField @bind-Value="SongId" Label="SongId oder SongUrl" Variant="Variant.Filled" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" AdornmentColor="Color.Primary" />
+    <MudButton StartIcon="@Icons.Material.TwoTone.Search" OnClick="SucheTrack" Variant="Variant.Filled" Color="Color.Primary">Abrufen</MudButton>
+</MudStack>
+
+
+@if (FullTrack != null)
+{
+    <br />
+
+    <h1 class="songTitel">@FullTrack?.Name</h1>
+    <h2 class="artistsTitel">@string.Join(", ", Artists.Select(a => a.Name))</h2>
+    <h3 class="artistsTitel">@FullTrack?.Album.ReleaseDate</h3>
+    <audio class="mt-1" id="audio_with_controls" controls src="@FullTrack?.PreviewUrl" type="audio/mp3"></audio>
+
+    <MudGrid Style="margin-top: 10px">
+        <MudItem xs="6" md="3">
+            <MudTextField Value="@FullTrack.Name" Variant="Variant.Filled" ReadOnly="true" Label="Songname"/>
+        </MudItem>
+        <MudItem xs="6" md="3">
+            <MudTextField Value="@Genres" Variant="Variant.Filled" ReadOnly="true" Label="Genres" />
+        </MudItem>
+
+        <MudItem xs="6" md="3">
+            <MudField Label="Popularität" Variant="Variant.Filled" InnerPadding="true">
+                <MudProgressLinear Color="Color.Primary" Size="Size.Large" Rounded="true" Max="100" Min="0" Value="@FullTrack.Popularity" />
+            </MudField>
+        </MudItem>
+
+        <MudItem xs="6" md="3">
+            <MudField Label="Akustik" Variant="Variant.Filled" InnerPadding="true">
+                <MudProgressLinear Color="Color.Primary" Size="Size.Large" Rounded="true" Max="1" Min="0" Value="@SongFeatures.Acousticness" />
+            </MudField>
+        </MudItem>
+        <MudItem xs="6" md="3">
+            <MudField Label="Tanzbarkeit" Variant="Variant.Filled" InnerPadding="true">
+                <MudProgressLinear Color="Color.Primary" Size="Size.Large" Rounded="true" Max="1" Min="0" Value="@SongFeatures.Danceability" />
+            </MudField>
+        </MudItem>
+        <MudItem xs="6" md="3">
+            <MudField Label="Energie" Variant="Variant.Filled" InnerPadding="true">
+                <MudProgressLinear Color="Color.Primary" Size="Size.Large" Rounded="true" Max="1" Min="0" Value="@SongFeatures.Energy" />
+            </MudField>
+        </MudItem>
+
+        <MudItem xs="6" md="3">
+            <MudField Label="Instrumentalität" Variant="Variant.Filled" InnerPadding="true">
+                <MudProgressLinear Color="Color.Primary" Size="Size.Large" Rounded="true" Max="1" Min="0" Value="@SongFeatures.Instrumentalness" />
+            </MudField>
+        </MudItem>
+        <MudItem xs="6" md="3">
+            <MudField Label="Lebendigkeit" Variant="Variant.Filled" InnerPadding="true">
+                <MudProgressLinear Color="Color.Primary" Size="Size.Large" Rounded="true" Max="1" Min="0" Value="@SongFeatures.Liveness" />
+            </MudField>
+        </MudItem>
+        <MudItem xs="6" md="3">
+            <MudTextField Value="@SongFeatures.Loudness" Variant="Variant.Filled" ReadOnly="true" Label="Lautstärke" />
+        </MudItem>
+
+        <MudItem xs="6" md="3">
+            <MudField Label="Sprachlichkeit" Variant="Variant.Filled" InnerPadding="true">
+                <MudProgressLinear Color="Color.Primary" Size="Size.Large" Rounded="true" Max="1" Min="0" Value="@SongFeatures.Speechiness" />
+            </MudField>
+        </MudItem>
+        <MudItem xs="6" md="3">
+            <MudTextField Value="@SongFeatures.Tempo" Variant="Variant.Filled" ReadOnly="true" Label="Tempo" />
+        </MudItem>
+        <MudItem xs="6" md="3">
+            <MudField Label="Wertigkeit" Variant="Variant.Filled" InnerPadding="true">
+                <MudProgressLinear Color="Color.Primary" Size="Size.Large" Rounded="true" Max="1" Min="0" Value="@SongFeatures.Valence" />
+            </MudField>
+        </MudItem>
+    </MudGrid>
+
+    <MudStack Class="my-7" Row="true" Spacing="8" AlignItems="AlignItems.Center" Justify="Justify.Center">
+        @foreach (var img in Bilder.Where(img => img != null))
+        {
+            <MudImage Fluid="true" Width="200" Class="kuenstlerBild" ObjectFit="ObjectFit.Cover" ObjectPosition="ObjectPosition.Center" Src="@img.Url" Alt="Künstleravatar"/>
+        }
+    </MudStack>
+
+    @if (Artists.Count > 0)
+    {
+        <MudExpansionPanels Class="my-7">
+            <MudExpansionPanel Text="Künstler">
+                <MudSimpleTable Style="overflow-x: auto;">
+                    <thead>
+                    <tr>
+                        <th></th>
+                        <th>Id</th>
+                        <th>Links</th>
+                        <th>Name</th>
+                        <th>Popularität</th>
+                        <th>Follower</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var artist in Artists)
+                    {
+                        <tr>
+                            <td>
+                                <MudAvatar>
+                                        <MudImage Src="@artist.Images.FirstOrDefault()?.Url"></MudImage>
+                                </MudAvatar>
+                            </td>
+                            <td>@artist.Id</td>
+                            <td>
+                                @foreach (var link in artist.ExternalUrls)
+                                {
+                                    <a href="@link.Value">@link.Key</a>
+                                }
+                            </td>
+                            <td>@artist.Name</td>
+                            <td>@artist.Popularity %</td>
+                            <td>@artist.Followers.Total.ToString("N0")</td>
+                        </tr>
+                    }
+                    </tbody>
+                </MudSimpleTable>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
+        
+    }
+}
+
+
+@code {
+
+    [ParameterAttribute]
+    public string SongId { get; set; }
+
+    public string ErgebnisJson { get; set; }
+    public string Genres { get; set; }
+    public FullTrack FullTrack { get; set; }
+    public List<Image> Bilder { get; set; } = new();
+    public List<FullArtist> Artists { get; set; } = new();
+    public TrackAudioFeatures SongFeatures { get; set; }
+
+
+    protected override void OnParametersSet()
+    {
+        if (string.IsNullOrEmpty(SongId))
+            return;
+        if (SongId.Length > 22)
+        {
+            SongId = SongId.Replace("https://open.spotify.com/track/", "").Substring(0, 22);
+        }
+        RufeInformationenFürSongAb();
+    }
+
+    public void SucheTrack()
+    {
+        if (string.IsNullOrEmpty(SongId))
+        {
+            Snackbar.Add("Bitte gebe eine gültige SongID oder URL ein!", Severity.Error);
+        }
+        else
+        {
+            if (SongId.Length > 22)
+            {
+                SongId = SongId.Replace("https://open.spotify.com/intl-de/track/", "").Substring(0, 22);
+            }
+            _navigationManager.NavigateTo($"songs/{SongId}");
+        }
+    }
+
+
+    private async void RufeInformationenFürSongAb()
+    {
+        try
+        {
+            if (SongId?.Length > 22)
+            {
+                SongId = SongId.Replace("https://open.spotify.com/track/", "").Substring(0, 22);
+            }
+
+            if (SongId != null)
+            {
+                FullTrack = await _spotify.Tracks.Get(SongId);
+                SongFeatures = await _spotify.Tracks.GetAudioFeatures(SongId);
+            }
+
+            Bilder.Clear();
+            Bilder.Add(FullTrack.Album.Images.FirstOrDefault());
+            ErgebnisJson = FullTrack.Stringify();
+            var artistsIds = FullTrack.Artists.Select(a => a.Id);
+            Artists = _spotify.Artists.GetSeveral(new ArtistsRequest(artistsIds.ToList())).Result.Artists;
+            Bilder.AddRange(Artists.Select(a => a.Images.FirstOrDefault()));
+            var genres = Artists.SelectMany(a => a.Genres);
+            Genres = string.Join(", ", genres.Distinct());
+        }
+        catch (Exception e)
+        {
+            ErgebnisJson = e.Message;
+        }
+        StateHasChanged();
+    }
+
+
+
+
+}
