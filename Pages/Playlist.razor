@@ -62,17 +62,8 @@ else
     {
         FullPlaylist = await Spotify.Playlists.Get(PlaylistId);
         var items = await Spotify.Playlists.GetItems(FullPlaylist.Id);
-        var anzahlSeiten = items.Total / items.Limit;
-        AllTracks = new List<PlaylistTrack<IPlayableItem>>();
-        if (items.Items != null)
-        {
-            AllTracks.AddRange(items.Items);
-            for (int i = 0; i < anzahlSeiten; i++)
-            {
-                var nextPage = await Spotify.NextPage(items);
-                if (nextPage.Items != null) AllTracks.AddRange(nextPage.Items);
-            }
-        }
+        AllTracks = (List<PlaylistTrack<IPlayableItem>>)await Spotify.PaginateAll(items);
+        
         await InvokeAsync(StateHasChanged);
     }
 
